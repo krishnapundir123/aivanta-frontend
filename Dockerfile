@@ -11,8 +11,24 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Copy source and build
+# Copy source
 COPY . .
+
+# Railway injects env vars as Docker build-args.
+# Declaring them here ensures Docker INVALIDATES the build cache
+# when any of these values change, so Vite picks up the new values.
+ARG VITE_API_URL
+ARG VITE_WS_URL
+ARG VITE_SOCKET_URL
+ARG VITE_USE_DUMMY_DATA
+
+# Make them available to Vite during `npm run build`
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_WS_URL=$VITE_WS_URL
+ENV VITE_SOCKET_URL=$VITE_SOCKET_URL
+ENV VITE_USE_DUMMY_DATA=$VITE_USE_DUMMY_DATA
+
+# Build the app (env vars above are inlined by Vite)
 RUN npm run build
 
 # ---- Production Stage ----

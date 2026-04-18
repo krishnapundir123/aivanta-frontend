@@ -73,6 +73,22 @@ function App() {
   const { token, error } = useAppSelector((state) => state.auth);
   const dummy = useDummyData();
 
+  // Warn if API URL is misconfigured in production
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const isProd = !import.meta.env.DEV;
+
+    if (isProd && (!apiUrl || apiUrl.includes('localhost'))) {
+      // eslint-disable-next-line no-console
+      console.error(
+        '[AiVanta] CRITICAL: VITE_API_URL is not set or points to localhost in production. ' +
+        'Current value:', apiUrl,
+        'Please set VITE_API_URL in your Railway dashboard (e.g. https://your-api.up.railway.app/api/v1) ' +
+        'and trigger a redeploy.'
+      );
+    }
+  }, []);
+
   // Initialize auth on mount
   useEffect(() => {
     if (DUMMY_MODE) {
