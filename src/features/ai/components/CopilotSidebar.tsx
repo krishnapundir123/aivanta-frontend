@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bot, Send, X, Sparkles } from 'lucide-react';
 import Button from '../../../shared/components/ui/Button';
-import { aiApi } from '../api/aiApi';
+import { useCopilotQueryMutation } from '../api/aiApi';
 
 interface CopilotMessage {
   id: string;
@@ -30,6 +30,7 @@ export default function CopilotSidebar({ context, isOpen, onClose }: CopilotSide
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [queryCopilot] = useCopilotQueryMutation();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -54,7 +55,10 @@ export default function CopilotSidebar({ context, isOpen, onClose }: CopilotSide
     setIsLoading(true);
 
     try {
-      const response = await aiApi.copilotQuery(input, context).unwrap();
+      const response = await queryCopilot({
+        query: input,
+        context,
+      }).unwrap();
 
       const assistantMessage: CopilotMessage = {
         id: (Date.now() + 1).toString(),

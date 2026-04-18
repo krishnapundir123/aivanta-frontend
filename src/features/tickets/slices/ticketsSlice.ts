@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { api } from '../../../services/api';
+import { api, ApiError } from '../../../services/api';
+import { logout } from '../../auth/slices/authSlice';
 
 export interface Ticket {
   id: string;
@@ -66,35 +67,72 @@ const initialState: TicketsState = {
   filters: {},
 };
 
+function handleApiError(error: unknown, dispatch: Function): string {
+  if (error instanceof ApiError && error.status === 401) {
+    dispatch(logout());
+    return 'Session expired. Please sign in again.';
+  }
+  return error instanceof Error ? error.message : 'An error occurred';
+}
+
 export const fetchTickets = createAsyncThunk(
   'tickets/fetchTickets',
-  async (params: { page?: number; limit?: number; status?: string; priority?: string; search?: string }) => {
-    const response = await api.get<Ticket[]>('/tickets', params);
-    return response;
+  async (
+    params: { page?: number; limit?: number; status?: string; priority?: string; search?: string },
+    { dispatch, rejectWithValue }
+  ) => {
+    try {
+      const queryParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) queryParams.append(key, String(value));
+      });
+      const response = await api.get<Ticket[]>(`/tickets?${queryParams.toString()}`);
+      return response;
+    } catch (error) {
+      return rejectWithValue(handleApiError(error, dispatch));
+    }
   }
 );
 
 export const fetchTicketById = createAsyncThunk(
   'tickets/fetchTicketById',
-  async (id: string) => {
-    const response = await api.get<Ticket>(`/tickets/${id}`);
-    return response.data;
+  async (id: string, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await api.get<Ticket>(`/tickets/${id}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(handleApiError(error, dispatch));
+    }
   }
 );
 
 export const createTicket = createAsyncThunk(
   'tickets/createTicket',
-  async (data: { title: string; description: string; priority?: string; category?: string }) => {
-    const response = await api.post<Ticket>('/tickets', data);
-    return response.data;
+  async (
+    data: { title: string; description: string; priority?: string; category?: string },
+    { dispatch, rejectWithValue }
+  ) => {
+    try {
+      const response = await api.post<Ticket>('/tickets', data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(handleApiError(error, dispatch));
+    }
   }
 );
 
 export const updateTicket = createAsyncThunk(
   'tickets/updateTicket',
-  async ({ id, data }: { id: string; data: Partial<Ticket> }) => {
-    const response = await api.patch<Ticket>(`/tickets/${id}`, data);
-    return response.data;
+  async (
+    { id, data }: { id: string; data: Partial<Ticket> },
+    { dispatch, rejectWithValue }
+  ) => {
+    try {
+      const response = await api.patch<Ticket>(`/tickets/${id}`, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(handleApiError(error, dispatch));
+    }
   }
 );
 
@@ -108,9 +146,9 @@ const ticketsSlice = createSlice({
     clearFilters: (state) => {
       state.filters = {};
     },
-    addTicketMessage: (state, action) => {
+    addTicketMessage: (state, _action) => {
       if (state.currentTicket) {
-        // Add message to current ticket
+        void state;
       }
     },
   },
@@ -118,6 +156,7 @@ const ticketsSlice = createSlice({
     builder
       .addCase(fetchTickets.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
       .addCase(fetchTickets.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -126,19 +165,27 @@ const ticketsSlice = createSlice({
       })
       .addCase(fetchTickets.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message || 'Failed to fetch tickets';
+        state.error = (action.payload as string) || 'Failed to fetch tickets';
       })
       .addCase(fetchTicketById.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
       .addCase(fetchTicketById.fulfilled, (state, action) => {
         state.isLoading = false;
         state.currentTicket = action.payload || null;
       })
+      .addCase(fetchTicketById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = (action.payload as string) || 'Failed to fetch ticket';
+      })
       .addCase(createTicket.fulfilled, (state, action) => {
         if (action.payload) {
           state.tickets.unshift(action.payload);
         }
+      })
+      .addCase(createTicket.rejected, (state, action) => {
+        state.error = (action.payload as string) || 'Failed to create ticket';
       })
       .addCase(updateTicket.fulfilled, (state, action) => {
         if (action.payload) {
@@ -150,6 +197,9 @@ const ticketsSlice = createSlice({
             state.currentTicket = action.payload;
           }
         }
+      })
+      .addCase(updateTicket.rejected, (state, action) => {
+        state.error = (action.payload as string) || 'Failed to update ticket';
       });
   },
 });

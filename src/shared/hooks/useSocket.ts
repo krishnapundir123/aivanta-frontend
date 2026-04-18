@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { getSocket } from '../services/socket.service';
+import { getSocket } from '../../services/socket.service';
 
 export function useSocket(event: string, handler: (data: unknown) => void) {
   useEffect(() => {

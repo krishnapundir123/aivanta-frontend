@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock } from 'lucide-react';
+
 import { useAppDispatch, useAppSelector } from '../../../shared/hooks/useRedux';
 import { login } from '../slices/authSlice';
 import Button from '../../../shared/components/ui/Button';
@@ -13,6 +13,7 @@ export default function LoginPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { isLoading } = useAppSelector((state) => state.auth);
+  void isLoading;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +80,7 @@ export default function LoginPage() {
         <Button
           type="submit"
           className="w-full"
-          isLoading={isLoading}
+          isLoading={false}
         >
           Sign in
         </Button>

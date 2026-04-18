@@ -1,10 +1,13 @@
 import type { Middleware } from '@reduxjs/toolkit';
-import type { RootState } from '../../../app/store';
 
 interface AIEvent {
   type: string;
   payload: unknown;
   timestamp: number;
+}
+
+interface StateShape {
+  auth: { token: string | null };
 }
 
 class AISocketManager {
@@ -91,13 +94,14 @@ class AISocketManager {
 
 export const aiSocketManager = new AISocketManager();
 
-export const aiSocketMiddleware: Middleware<unknown, RootState> = (store) => (next) => (action) => {
+export const aiSocketMiddleware: Middleware = (store) => (next) => (action) => {
   const result = next(action);
 
   const typedAction = action as { type: string; payload?: unknown };
   
   if (typedAction.type === 'auth/setCredentials') {
-    const state = store.getState();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const state = (store.getState as () => StateShape)();
     const token = state.auth.token;
     if (token) {
       aiSocketManager.connect(token);

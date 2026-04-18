@@ -103,6 +103,8 @@ export default function SuggestedResponse({
 
   const current = suggestions[currentIndex];
 
+  if (!current) return null;
+
   return (
     <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg overflow-hidden">
       <button
@@ -129,7 +131,7 @@ export default function SuggestedResponse({
             <p className="text-sm text-gray-700 leading-relaxed">{current.text}</p>
 
             {/* Sources */}
-            {current.sources.length > 0 && (
+            {current.sources?.length > 0 && (
               <div className="mt-4">
                 <button
                   onClick={() => setShowSources(!showSources)}

@@ -1,5 +1,4 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQuery } from '../../../shared/api/baseQuery';
+import { api } from '../../../app/api';
 
 // ── Summarize ────────────────────────────────────────────────────────────────
 
@@ -102,10 +101,7 @@ interface CopilotQueryResult {
 
 // ── API definition ───────────────────────────────────────────────────────────
 
-export const aiApi = createApi({
-  reducerPath: 'aiApi',
-  baseQuery,
-  tagTypes: ['AISuggestion'],
+export const aiApi = api.injectEndpoints({
   endpoints: (builder) => ({
     summarizeTicket: builder.mutation<SummarizeResult, SummarizeInput>({
       query: (body) => ({
@@ -134,8 +130,6 @@ export const aiApi = createApi({
       query: ({ ticketId, ...body }) => ({
         url: `/ai/suggest-response/${ticketId}`,
         params: { includeSources: body.includeSources },
-        // conversationHistory sent as query param would be too large — POST preferred,
-        // but hooks use useLazyQuery so we keep it as a query for now
       }),
     }),
 

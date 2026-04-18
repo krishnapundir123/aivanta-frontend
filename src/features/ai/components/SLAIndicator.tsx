@@ -6,7 +6,8 @@ interface SLAIndicatorProps {
   timeRemaining?: number;
 }
 
-export default function SLAIndicator({ status, deadline, timeRemaining }: SLAIndicatorProps) {
+export default function SLAIndicator({ status, timeRemaining }: SLAIndicatorProps) {
+  if (!status) return null;
   const getStatusStyles = () => {
     switch (status) {
       case 'ON_TRACK':
@@ -27,6 +28,12 @@ export default function SLAIndicator({ status, deadline, timeRemaining }: SLAInd
           text: 'text-red-800',
           icon: <AlertTriangle className="w-4 h-4" />,
         };
+      default:
+        return {
+          bg: 'bg-gray-100',
+          text: 'text-gray-600',
+          icon: <Clock className="w-4 h-4" />,
+        };
     }
   };
 
@@ -42,7 +49,7 @@ export default function SLAIndicator({ status, deadline, timeRemaining }: SLAInd
     <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${styles.bg} ${styles.text}`}>
       {styles.icon}
       <span>
-        SLA: {status.replace('_', ' ')}
+        SLA: {status?.replace('_', ' ') ?? 'UNKNOWN'}
         {timeRemaining !== undefined && timeRemaining > 0 && (
           <span className="ml-1">({formatTime(timeRemaining)} left)</span>
         )}

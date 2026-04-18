@@ -122,7 +122,7 @@ export default function TicketListPage() {
                   </td>
                 </tr>
               ) : (
-                tickets.map((ticket) => (
+                tickets.map((ticket: { id: string; title: string; description?: string; aiSummary?: string; status: string; priority: string; assignee?: { firstName: string; lastName: string }; createdAt: string }) => (
                   <tr key={ticket.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <Link to={`/tickets/${ticket.id}`} className="block">
@@ -130,17 +130,17 @@ export default function TicketListPage() {
                           {ticket.title}
                         </p>
                         <p className="text-sm text-gray-500 truncate max-w-md">
-                          {ticket.aiSummary || ticket.description.slice(0, 100)}...
+                          {ticket.aiSummary || ticket.description?.slice(0, 100) || ''}...
                         </p>
                       </Link>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant={statusColors[ticket.status]}>
+                      <Badge variant={statusColors[ticket.status as keyof typeof statusColors]}>
                         {ticket.status.replace('_', ' ')}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant={priorityColors[ticket.priority]}>
+                      <Badge variant={priorityColors[ticket.priority as keyof typeof priorityColors]}>
                         {ticket.priority}
                       </Badge>
                     </td>

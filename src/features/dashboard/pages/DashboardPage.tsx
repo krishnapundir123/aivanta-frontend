@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+
 import { Link } from 'react-router-dom';
 import {
   Ticket,
@@ -21,7 +21,7 @@ export default function DashboardPage() {
   // Real API — kept intact for when the backend is ready
   const { data: apiTickets, isLoading: apiLoading } = useGetTicketsQuery({ status: '', priority: '', category: '' });
 
-  const tickets = dummy.enabled ? dummy.tickets : (apiTickets ?? []);
+  const tickets = dummy.enabled ? dummy.tickets : (apiTickets?.data ?? []);
   const isLoading = dummy.enabled ? false : apiLoading;
 
   // dispatch is available for future use (e.g. filters, actions)
@@ -146,7 +146,7 @@ export default function DashboardPage() {
                       {ticket.title}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {ticket.aiSummary || ticket.description.slice(0, 60)}...
+                      {((ticket as unknown) as { aiSummary?: string; description?: string }).aiSummary || ((ticket as unknown) as { description?: string }).description?.slice(0, 60) || ''}...
                     </p>
                   </div>
                   <div className="ml-4 flex items-center space-x-2">

@@ -126,11 +126,13 @@ export default function TicketSidebar({ ticketId, onOpenCopilot }: TicketSidebar
               </button>
             )}
           </div>
-          <RoutingSuggestion
-            recommended={recommended || undefined}
-            alternatives={alternatives}
-            isLoading={routingLoading}
-          />
+          {recommended && (
+            <RoutingSuggestion
+              recommended={recommended}
+              alternatives={alternatives}
+              isLoading={routingLoading}
+            />
+          )}
         </div>
       )}
     </div>

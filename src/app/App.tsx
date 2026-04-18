@@ -1,9 +1,10 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../shared/hooks/useRedux';
-import { initializeAuth, setCredentials } from '../features/auth/slices/authSlice';
-import { initializeSocket } from '../services/socket.service';
+import { initializeAuth, setCredentials, logout } from '../features/auth/slices/authSlice';
+import { initializeSocket, disconnectSocket } from '../services/socket.service';
 import { DUMMY_MODE, useDummyData } from '../shared/mocks/useDummyData';
+import toast from 'react-hot-toast';
 
 // Layouts
 import DashboardLayout from '../shared/components/layouts/DashboardLayout';
@@ -24,22 +25,55 @@ import TeamPage from '../features/team/pages/TeamPage';
 import SettingsPage from '../features/settings/pages/SettingsPage';
 import NotFoundPage from '../shared/components/pages/NotFoundPage';
 
-// Protected route component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
-  
-  // if (!isAuthenticated) {
-  //   return <Navigate to="/login" replace />;
-  // }
-  
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-12 h-12 bg-primary-200 rounded-xl mb-4" />
+          <div className="text-gray-500 text-sm">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
   return <>{children}</>;
-};
+}
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-12 h-12 bg-primary-200 rounded-xl mb-4" />
+          <div className="text-gray-500 text-sm">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
 
 function App() {
   const dispatch = useAppDispatch();
-  const { isAuthenticated, token } = useAppSelector((state) => state.auth);
+  const navigate = useNavigate();
+  const { token, error } = useAppSelector((state) => state.auth);
   const dummy = useDummyData();
 
+  // Initialize auth on mount
   useEffect(() => {
     if (DUMMY_MODE) {
       dispatch(setCredentials({ user: dummy.user, token: dummy.token }));
@@ -48,28 +82,34 @@ function App() {
     }
   }, [dispatch, dummy.user, dummy.token]);
 
+  // Connect/disconnect socket based on auth state
   useEffect(() => {
-    if (isAuthenticated && token) {
+    if (token) {
       initializeSocket(token);
+    } else {
+      disconnectSocket();
     }
-  }, [isAuthenticated, token]);
+  }, [token]);
+
+  // Handle auth errors (session expired, etc.)
+  useEffect(() => {
+    if (error === 'Your session has expired. Please sign in again.') {
+      toast.error(error);
+      dispatch(logout());
+      navigate('/login');
+    }
+  }, [error, dispatch, navigate]);
 
   return (
     <Routes>
-      {/* Public routes */}
-      <Route element={<AuthLayout />}>
+      {/* Public routes — redirect to dashboard if already logged in */}
+      <Route element={<PublicRoute><AuthLayout /></PublicRoute>}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Route>
 
-      {/* Protected routes */}
-      <Route
-        element={
-          // <ProtectedRoute>
-            <DashboardLayout />
-          // </ProtectedRoute>
-        }
-      >
+      {/* Protected routes — redirect to login if not authenticated */}
+      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/tickets" element={<TicketListPage />} />

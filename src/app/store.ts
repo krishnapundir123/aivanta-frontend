@@ -1,22 +1,19 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
-import authReducer from '../features/auth/store/authSlice';
-import ticketsReducer from '../features/tickets/store/ticketsSlice';
-import { ticketsApi } from '../features/tickets/api/ticketsApi';
-import { aiApi } from '../features/ai/api/aiApi';
+import authReducer from '../features/auth/slices/authSlice';
+import ticketsReducer from '../features/tickets/slices/ticketsSlice';
+import { api } from './api';
 import { aiSocketMiddleware } from '../features/ai/middleware/aiSocketMiddleware';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     tickets: ticketsReducer,
-    [ticketsApi.reducerPath]: ticketsApi.reducer,
-    [aiApi.reducerPath]: aiApi.reducer,
+    [api.reducerPath]: api.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
-      .concat(ticketsApi.middleware)
-      .concat(aiApi.middleware)
+      .concat(api.middleware)
       .concat(aiSocketMiddleware),
   devTools: import.meta.env.DEV,
 });

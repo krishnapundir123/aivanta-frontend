@@ -1,5 +1,4 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQuery } from '../../../shared/api/baseQuery';
+import { api } from '../../../app/api';
 
 export interface Ticket {
   id: string;
@@ -18,6 +17,16 @@ export interface Ticket {
   updatedAt: string;
 }
 
+export interface PaginatedTickets {
+  data: Ticket[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export interface CreateTicketInput {
   title: string;
   description: string;
@@ -31,21 +40,23 @@ export interface UpdateTicketInput {
   assignedTo?: string;
 }
 
-export const ticketsApi = createApi({
-  reducerPath: 'ticketsApi',
-  baseQuery,
-  tagTypes: ['Ticket'],
+export const ticketsApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    getTickets: builder.query<Ticket[], { status?: string; priority?: string; category?: string }>({
+    getTickets: builder.query<PaginatedTickets, { status?: string; priority?: string; category?: string }>({
       query: (params) => ({
         url: '/tickets',
         params,
       }),
+      transformResponse: (raw: { data: Ticket[]; pagination: PaginatedTickets['pagination'] }) => ({
+        data: raw.data,
+        pagination: raw.pagination,
+      }),
       providesTags: ['Ticket'],
     }),
-    
+
     getTicket: builder.query<Ticket, string>({
       query: (id) => `/tickets/${id}`,
+      transformResponse: (raw: { data: Ticket }) => raw.data,
       providesTags: (_result, _error, id) => [{ type: 'Ticket', id }],
     }),
     

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Check, X, RefreshCw } from 'lucide-react';
+import { Sparkles, Check, RefreshCw } from 'lucide-react';
 import Button from '../../../shared/components/ui/Button';
 
 interface Suggestion {

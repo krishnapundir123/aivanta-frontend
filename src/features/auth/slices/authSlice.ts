@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { api } from '../../../services/api';
+import { api, ApiError } from '../../../services/api';
 
 interface User {
   id: string;
@@ -64,6 +64,9 @@ export const fetchCurrentUser = createAsyncThunk(
       const response = await api.get<User>('/auth/me');
       return response.data;
     } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        return rejectWithValue('SESSION_EXPIRED');
+      }
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch user');
     }
   }
@@ -87,6 +90,14 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
+      state.error = null;
+      localStorage.removeItem('token');
+    },
+    sessionExpired: (state) => {
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+      state.error = 'Your session has expired. Please sign in again.';
       localStorage.removeItem('token');
     },
     clearError: (state) => {
@@ -133,13 +144,18 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload!;
       })
-      .addCase(fetchCurrentUser.rejected, (state) => {
+      .addCase(fetchCurrentUser.rejected, (state, action) => {
         state.isLoading = false;
+        state.isAuthenticated = false;
+        state.user = null;
         state.token = null;
+        if (action.payload === 'SESSION_EXPIRED') {
+          state.error = 'Your session has expired. Please sign in again.';
+        }
         localStorage.removeItem('token');
       });
   },
 });
 
-export const { logout, clearError, setCredentials } = authSlice.actions;
+export const { logout, sessionExpired, clearError, setCredentials } = authSlice.actions;
 export default authSlice.reducer;
